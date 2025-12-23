@@ -49,7 +49,7 @@ export default async function handler(req: Request) {
     // 等待视频生成完成
     while (!operation.done) {
       await new Promise(resolve => setTimeout(resolve, 10000));
-      operation = await ai.operations.getVideosOperation({ operation: operation });
+      operation = await ai.operations.getVideosOperation({ name: operation.name });
     }
 
     if (operation.error) {
