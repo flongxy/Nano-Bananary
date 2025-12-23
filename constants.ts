@@ -208,7 +208,7 @@ export const TRANSFORMATIONS: Transformation[] = [
   
   // Category: 50+ Artistic Effects
   {
-    key: "category_effects",
+    key: "category_artistic_effects",
     titleKey: "transformations.categories.effects.title",
     emoji: "✨",
     items: [

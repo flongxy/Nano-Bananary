@@ -5,17 +5,21 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:api": "node server.js",
+    "dev:all": "concurrently \"npm run dev\" \"npm run dev:api\"",
     "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
     "@google/genai": "^1.17.0",
+    "dotenv": "^16.4.7",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
     "@vercel/node": "^5.5.16",
+    "concurrently": "^9.1.2",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
   }

@@ -110,26 +110,42 @@ export default async function handler(req: Request) {
   } catch (error) {
     console.error("Error calling Gemini API:", error);
     let errorMessage = "An unknown error occurred while communicating with the API.";
-    
+    let statusCode = 500;
+
     if (error instanceof Error) {
       errorMessage = error.message;
-      try {
-        const parsedError = JSON.parse(errorMessage);
-        if (parsedError.error && parsedError.error.message) {
-          if (parsedError.error.status === 'RESOURCE_EXHAUSTED') {
-            errorMessage = "You've likely exceeded the request limit. Please wait a moment before trying again.";
-          } else if (parsedError.error.code === 500 || parsedError.error.status === 'UNKNOWN') {
-            errorMessage = "An unexpected server error occurred. This might be a temporary issue. Please try again in a few moments.";
-          } else {
-            errorMessage = parsedError.error.message;
+
+      // 检查是否是地理位置限制错误
+      if (errorMessage.includes('User location is not supported') ||
+          errorMessage.includes('location is not supported')) {
+        errorMessage = "⚠️ Gemini API is not available in your region. Please try one of the following solutions:\n\n" +
+                      "1. Use a VPN to connect from a supported region (US, EU, etc.)\n" +
+                      "2. Deploy this application to a cloud service in a supported region (Vercel, Cloudflare, etc.)\n" +
+                      "3. Use a proxy server in a supported location\n\n" +
+                      "Supported regions: https://ai.google.dev/gemini-api/docs/available-regions";
+        statusCode = 451; // 451 Unavailable For Legal Reasons
+      } else {
+        try {
+          const parsedError = JSON.parse(errorMessage);
+          if (parsedError.error && parsedError.error.message) {
+            if (parsedError.error.status === 'RESOURCE_EXHAUSTED') {
+              errorMessage = "You've likely exceeded the request limit. Please wait a moment before trying again.";
+              statusCode = 429;
+            } else if (parsedError.error.code === 500 || parsedError.error.status === 'UNKNOWN') {
+              errorMessage = "An unexpected server error occurred. This might be a temporary issue. Please try again in a few moments.";
+            } else {
+              errorMessage = parsedError.error.message;
+            }
           }
+        } catch (e) {
+          // 如果不是 JSON 格式，保持原始错误消息
         }
-      } catch (e) {}
+      }
     }
 
     return new Response(
       JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      { status: statusCode, headers: { 'Content-Type': 'application/json' } }
     );
   }
 }

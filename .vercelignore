@@ -1,0 +1,9 @@
+node_modules
+.env.local
+.env*.local
+server.js
+DEV_SETUP.md
+REGION_RESTRICTION_SOLUTIONS.md
+test
+*.log
+.DS_Store

@@ -24,7 +24,12 @@ export async function editImage(
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        throw new Error(`Server error (${response.status}): Failed to process image`);
+      }
       throw new Error(errorData.error || 'Failed to process image');
     }
 
