@@ -1,20 +1,74 @@
 
 
-export const fileToBase64 = (file: File): Promise<{ base64: string; mimeType: string }> => {
+/**
+ * Compresses an image to reduce file size while maintaining quality
+ * @param file The image file to compress
+ * @param maxWidth Maximum width (default: 1920)
+ * @param maxHeight Maximum height (default: 1920)
+ * @param quality JPEG quality (0-1, default: 0.85)
+ * @returns Promise with compressed base64 and mimeType
+ */
+export const compressImage = (
+  file: File,
+  maxWidth: number = 1920,
+  maxHeight: number = 1920,
+  quality: number = 0.85
+): Promise<{ base64: string; mimeType: string }> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
-    reader.onload = () => {
-      const result = reader.result as string;
-      const base64 = result.split(',')[1];
-      if (base64) {
-        resolve({ base64, mimeType: file.type });
-      } else {
-        reject(new Error("Failed to read file as Base64."));
-      }
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        // Calculate new dimensions while maintaining aspect ratio
+        if (width > height) {
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height;
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Failed to get canvas context'));
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Convert to JPEG for better compression (unless it's PNG with transparency)
+        const mimeType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+        const dataUrl = canvas.toDataURL(mimeType, quality);
+        const base64 = dataUrl.split(',')[1];
+
+        if (base64) {
+          resolve({ base64, mimeType });
+        } else {
+          reject(new Error('Failed to compress image'));
+        }
+      };
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = e.target?.result as string;
     };
     reader.onerror = (error) => reject(error);
   });
+};
+
+export const fileToBase64 = (file: File): Promise<{ base64: string; mimeType: string }> => {
+  // Use compression for all images
+  return compressImage(file);
 };
 
 export const dataUrlToFile = async (dataUrl: string, filename: string): Promise<File> => {
